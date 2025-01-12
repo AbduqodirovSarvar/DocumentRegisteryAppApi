@@ -13,6 +13,9 @@ services:
       - "8080:8080"
     networks:
       - webnet
+    volumes:
+      - ./wwwroot/uploads:/app/wwwroot/uploads
+    command: /bin/sh -c "mkdir -p /app/wwwroot/uploads && chmod -R 775 /app/wwwroot/uploads && dotnet DocumentRegisteryAppApi.dll"
     restart: always
     depends_on:
       postgres:

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
+using System.Net.Mime;
 
 namespace DocumentRegisteryAppApi.Controllers
 {
@@ -112,6 +113,36 @@ namespace DocumentRegisteryAppApi.Controllers
             }
         }
 
+        [HttpGet("file/download/{fileName}")]
+        public IActionResult GetFile([FromRoute] string fileName)
+        {
+            var filePath = Path.Combine(_env.WebRootPath, "uploads", fileName);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound();
+            }
+
+            return PhysicalFile(filePath, "application/octet-stream");
+        }
+
+        [HttpGet("file/{fileName}")]
+        public IActionResult GetFile2([FromRoute] string fileName)
+        {
+            var filePath = Path.Combine(_env.WebRootPath, "uploads", fileName);
+
+            if (filePath == null || !System.IO.File.Exists(filePath))
+            {
+                return NotFound();
+            }
+
+            string contentType = GetContentType(fileName);
+
+            return PhysicalFile(filePath, contentType);
+        }
+
+
+
         private async Task<string> SaveFileAsync(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -134,6 +165,21 @@ namespace DocumentRegisteryAppApi.Controllers
             }
 
             return fileName;
+        }
+
+        private static string GetContentType(string fileName)
+        {
+            string extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            return extension switch
+            {
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => MediaTypeNames.Image.Jpeg,
+                ".pdf" => MediaTypeNames.Application.Pdf,
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                _ => MediaTypeNames.Application.Octet,
+            };
         }
     }
 }
