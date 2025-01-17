@@ -94,16 +94,31 @@ namespace DocumentRegisteryAppApi.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> GetAll([FromQuery] int size = 10, int pageIndex = 0)
+        public async Task<IActionResult> GetAll([FromQuery] int size = 10, int pageIndex = 0, string? searchText = null)
         {
             try
             {
-                var docs = await _appDbContext.Documents.Skip(pageIndex * size).Take(size).ToListAsync();
-                var total = await _appDbContext.Documents.CountAsync();
+                List<DocumentEntity> docs;
+                int total;
+                if(searchText != null)
+                {
+                    docs = await _appDbContext.Documents
+                                    .Where(x => x.Subject.ToLower().Contains(searchText.ToLower())
+                                             || x.Number.ToLower().Contains(searchText.ToLower())
+                                             || x.Correspondent.ToLower().Contains(searchText.ToLower())
+                                             || x.DeliveryMethod.ToLower().Contains(searchText.ToLower())
+                                             || x.Description.ToLower().Contains(searchText.ToLower())).ToListAsync();
+                    total = docs.Count;
+                }
+                else
+                {
+                    docs = await _appDbContext.Documents.ToListAsync();
+                    total = await _appDbContext.Documents.CountAsync();
+                }
 
                 return Ok(new
                 {
-                    documents = docs,
+                    documents = docs.Skip(pageIndex * size).Take(size).ToList(),
                     total = total
                 });
             }

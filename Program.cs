@@ -16,14 +16,22 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connect
 
 builder.Services.AddScoped<AppDbContext>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOriginsPolicy",
+        builder => builder.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader());
+});
 
 var app = builder.Build();
 
+app.UseCors("AllowAllOriginsPolicy");
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseRouting();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.MapControllers();
 
@@ -31,5 +39,10 @@ using var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;
 var context = services.GetRequiredService<AppDbContext>();
 await context.Database.MigrateAsync();
+
+app.MapGet("health", () =>
+{
+    return Results.Ok("Service is healthy!");
+});
 
 app.Run();
